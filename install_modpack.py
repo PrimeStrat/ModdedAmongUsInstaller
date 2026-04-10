@@ -34,12 +34,10 @@ PROFILE_SUBDIRS = [
     "BepInEx/patchers",
 ]
 
+# Entry point for the installer.
+#
+# @return: None
 def main():
-    """
-    Entry point for the installer.
-
-    @return: None
-    """
     print("=" * 60)
     print("  Modded Among Us Installer")
     print("  TOU-Mira + LevelImposter -> Thunderstore Profile")
@@ -82,13 +80,11 @@ def main():
     print("  4. Click 'Start Modded' to launch")
     print("=" * 60)
 
+# Send a GET request to the GitHub API and return parsed JSON.
+#
+# @param url: Full GitHub API URL to request.
+# @return: Parsed JSON as dict/list, or None if 404.
 def _api_get(url: str) -> dict | list | None:
-    """
-    Send a GET request to the GitHub API and return parsed JSON.
-
-    @param url: Full GitHub API URL to request.
-    @return: Parsed JSON as dict/list, or None if 404.
-    """
     req = urllib.request.Request(url, headers=REQUEST_HEADERS)
     try:
         with urllib.request.urlopen(req) as resp:
@@ -98,14 +94,12 @@ def _api_get(url: str) -> dict | list | None:
             return None
         raise
 
+# Download a file from a URL with a progress indicator.
+#
+# @param url: Direct download URL.
+# @param label: Display label for progress output.
+# @return: Raw bytes of the downloaded file.
 def _download_bytes(url: str, label: str) -> bytes:
-    """
-    Download a file from a URL with a progress indicator.
-
-    @param url: Direct download URL.
-    @param label: Display label for progress output.
-    @return: Raw bytes of the downloaded file.
-    """
     headers = {**REQUEST_HEADERS, "Accept": "application/octet-stream"}
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp:
@@ -127,15 +121,13 @@ def _download_bytes(url: str, label: str) -> bytes:
         print()
     return bytes(data)
 
+# Extract a zip archive into a destination folder, merging with existing contents.
+#
+# @param zip_bytes: Raw bytes of the zip file.
+# @param dest: Destination directory path.
+# @param label: Display label for progress output.
+# @return: None
 def _safe_extract(zip_bytes: bytes, dest: Path, label: str):
-    """
-    Extract a zip archive into a destination folder, merging with existing contents.
-
-    @param zip_bytes: Raw bytes of the zip file.
-    @param dest: Destination directory path.
-    @param label: Display label for progress output.
-    @return: None
-    """
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         members = zf.namelist()
         strip_prefix = _detect_wrapping_folder(members)
@@ -161,13 +153,11 @@ def _safe_extract(zip_bytes: bytes, dest: Path, label: str):
                 with zf.open(member) as src, open(target, "wb") as dst:
                     shutil.copyfileobj(src, dst)
 
+# Detect if all zip entries share a single top-level wrapping folder.
+#
+# @param members: List of zip entry paths.
+# @return: The wrapping folder prefix to strip, or empty string if none.
 def _detect_wrapping_folder(members: list[str]) -> str:
-    """
-    Detect if all zip entries share a single top-level wrapping folder.
-
-    @param members: List of zip entry paths.
-    @return: The wrapping folder prefix to strip, or empty string if none.
-    """
     top_dirs = {m.split("/")[0] for m in members if "/" in m}
     if len(top_dirs) != 1:
         return ""
@@ -176,12 +166,10 @@ def _detect_wrapping_folder(members: list[str]) -> str:
         return candidate
     return ""
 
+# Find the latest TOU-Mira release with a Steam zip asset.
+#
+# @return: Tuple of (repo, tag, version_label, steam_zip_url).
 def _get_tou_mira_release() -> tuple[str, str, str, str]:
-    """
-    Find the latest TOU-Mira release with a Steam zip asset.
-
-    @return: Tuple of (repo, tag, version_label, steam_zip_url).
-    """
     for repo in TOU_MIRA_REPOS:
         print(f"  Checking {repo} for releases...")
         releases = _api_get(f"{GITHUB_API}/repos/{repo}/releases")
@@ -200,12 +188,10 @@ def _get_tou_mira_release() -> tuple[str, str, str, str]:
     print("ERROR: Could not find any TOU-Mira release with a Steam zip asset.")
     sys.exit(1)
 
+# Find the latest LevelImposter release with a LevelImposter.zip asset.
+#
+# @return: Tuple of (tag, version_label, zip_url).
 def _get_level_impostor_release() -> tuple[str, str, str]:
-    """
-    Find the latest LevelImposter release with a LevelImposter.zip asset.
-
-    @return: Tuple of (tag, version_label, zip_url).
-    """
     print(f"  Checking {LEVEL_IMPOSTOR_REPO} for releases...")
     releases = _api_get(f"{GITHUB_API}/repos/{LEVEL_IMPOSTOR_REPO}/releases")
     if not releases:
@@ -224,26 +210,22 @@ def _get_level_impostor_release() -> tuple[str, str, str]:
     print("ERROR: Could not find a LevelImposter.zip asset in any release.")
     sys.exit(1)
 
+# Parse a version tag into major, minor, patch integers.
+#
+# @param version_string: Version string like 'v1.5.9' or '0.21.2-beta'.
+# @return: Tuple of (major, minor, patch).
 def _parse_version(version_string: str) -> tuple[int, int, int]:
-    """
-    Parse a version tag into major, minor, patch integers.
-
-    @param version_string: Version string like 'v1.5.9' or '0.21.2-beta'.
-    @return: Tuple of (major, minor, patch).
-    """
     cleaned = version_string.lstrip("v").split("-")[0]
     parts = cleaned.split(".")
     parts += ["0"] * (3 - len(parts))
     return int(parts[0]), int(parts[1]), int(parts[2])
 
+# Generate a mods.yml manifest for the Thunderstore profile.
+#
+# @param tou_version: TOU-Mira version tag string.
+# @param li_version: LevelImposter version tag string.
+# @return: YAML string for mods.yml.
 def _build_mods_yml(tou_version: str, li_version: str) -> str:
-    """
-    Generate a mods.yml manifest for the Thunderstore profile.
-
-    @param tou_version: TOU-Mira version tag string.
-    @param li_version: LevelImposter version tag string.
-    @return: YAML string for mods.yml.
-    """
     now_ms = int(time.time() * 1000)
     tou_maj, tou_min, tou_pat = _parse_version(tou_version)
     li_maj, li_min, li_pat = _parse_version(li_version)
@@ -313,18 +295,16 @@ def _build_mods_yml(tou_version: str, li_version: str) -> str:
         f"  enabled: true\n"
     )
 
+# Create a Thunderstore profile folder with extracted mod contents.
+#
+# @param profile_name: Name for the Thunderstore profile folder.
+# @param tou_zip: Raw bytes of the TOU-Mira zip archive.
+# @param li_zip: Raw bytes of the LevelImposter zip archive.
+# @param tou_version: TOU-Mira version tag string.
+# @param li_version: LevelImposter version tag string.
+# @return: Path to the created profile directory.
 def _create_profile(profile_name: str, tou_zip: bytes, li_zip: bytes,
                     tou_version: str, li_version: str) -> Path:
-    """
-    Create a Thunderstore profile folder with extracted mod contents.
-
-    @param profile_name: Name for the Thunderstore profile folder.
-    @param tou_zip: Raw bytes of the TOU-Mira zip archive.
-    @param li_zip: Raw bytes of the LevelImposter zip archive.
-    @param tou_version: TOU-Mira version tag string.
-    @param li_version: LevelImposter version tag string.
-    @return: Path to the created profile directory.
-    """
     profile_dir = THUNDERSTORE_BASE / profile_name
 
     if profile_dir.exists():

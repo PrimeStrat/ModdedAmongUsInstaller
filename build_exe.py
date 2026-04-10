@@ -1,20 +1,10 @@
-"""
-PyInstaller build script for the Modded Among Us Installer.
-
-Usage:
-    python build_exe.py
-"""
-
 import subprocess
 import sys
 
-
+# Build the installer exe using PyInstaller.
+#
+# @return: None
 def main():
-    """
-    Build the installer exe using PyInstaller.
-
-    @return: None
-    """
     args = [
         sys.executable, "-m", "PyInstaller",
         "--onefile",
@@ -25,7 +15,6 @@ def main():
     ]
     result = subprocess.run(args)
     sys.exit(result.returncode)
-
 
 if __name__ == "__main__":
     main()
