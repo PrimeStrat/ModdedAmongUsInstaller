@@ -43,8 +43,6 @@ def main():
     print("  TOU-Mira + LevelImposter -> Thunderstore Profile")
     print("=" * 60)
 
-    profile_name = sys.argv[1] if len(sys.argv) > 1 else None
-
     print("\n[1/4] Finding latest releases...")
     tou_repo, tou_tag, tou_label, tou_url = _get_tou_mira_release()
     li_tag, li_label, li_url = _get_level_impostor_release()
@@ -52,9 +50,7 @@ def main():
     print(f"\n  TOU-Mira     : {tou_label}  (tag: {tou_tag}, repo: {tou_repo})")
     print(f"  LevelImposter: {li_label}  (tag: {li_tag})")
 
-    if not profile_name:
-        default_name = f"ModdedAmongUs_TOU-{tou_tag}_LI-{li_tag}"
-        profile_name = input(f"\n  Profile name [{default_name}]: ").strip() or default_name
+    profile_name = f"ModdedMongy_TOU-{tou_tag}_LI-{li_tag}"
 
     print(f"\n  Profile will be created at:")
     print(f"    {THUNDERSTORE_BASE / profile_name}")
@@ -308,11 +304,7 @@ def _create_profile(profile_name: str, tou_zip: bytes, li_zip: bytes,
     profile_dir = THUNDERSTORE_BASE / profile_name
 
     if profile_dir.exists():
-        print(f"\n  Profile '{profile_name}' already exists at:\n    {profile_dir}")
-        resp = input("  Overwrite? [y/N]: ").strip().lower()
-        if resp != "y":
-            print("  Aborted.")
-            sys.exit(0)
+        print(f"\n  Profile '{profile_name}' already exists. Overwriting...")
         shutil.rmtree(profile_dir)
 
     profile_dir.mkdir(parents=True, exist_ok=True)
