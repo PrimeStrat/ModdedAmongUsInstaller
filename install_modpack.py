@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -26,6 +27,8 @@ THUNDERSTORE_BASE = Path(
 GITHUB_API = "https://api.github.com"
 REQUEST_HEADERS = {"Accept": "application/vnd.github+json", "User-Agent": "ModdedAmongUsInstaller/1.0"}
 
+PROFILE_NAME_RE = re.compile(r"^ModdedMongy_TOU-(.+)_LI-(.+)$")
+
 PROFILE_SUBDIRS = [
     "_state",
     "BepInEx/plugins",
@@ -43,7 +46,7 @@ def main():
     print("  TOU-Mira + LevelImposter -> Thunderstore Profile")
     print("=" * 60)
 
-    print("\n[1/4] Finding latest releases...")
+    print("\n[1/5] Finding latest releases...")
     tou_repo, tou_tag, tou_label, tou_url = _get_tou_mira_release()
     li_tag, li_label, li_url = _get_level_impostor_release()
 
@@ -55,13 +58,16 @@ def main():
     print(f"\n  Profile will be created at:")
     print(f"    {THUNDERSTORE_BASE / profile_name}")
 
-    print("\n[2/4] Downloading TOU-Mira...")
+    print("\n[2/5] Removing outdated profiles...")
+    _delete_old_profiles(tou_tag, li_tag)
+
+    print("\n[3/5] Downloading TOU-Mira...")
     tou_zip = _download_bytes(tou_url, "TOU-Mira")
 
-    print("\n[3/4] Downloading LevelImposter...")
+    print("\n[4/5] Downloading LevelImposter...")
     li_zip = _download_bytes(li_url, "LevelImposter")
 
-    print("\n[4/4] Creating Thunderstore profile...")
+    print("\n[5/5] Creating Thunderstore profile...")
     profile_dir = _create_profile(profile_name, tou_zip, li_zip, tou_tag, li_tag)
 
     print("\n" + "=" * 60)
@@ -75,6 +81,28 @@ def main():
     print(f"  3. Switch to the '{profile_name}' profile")
     print("  4. Click 'Start Modded' to launch")
     print("=" * 60)
+
+# Delete all ModdedMongy profiles whose TOU and LI versions are both lower than the given tags.
+#
+# @param new_tou_tag: The TOU-Mira version tag being installed.
+# @param new_li_tag: The LevelImposter version tag being installed.
+# @return: None
+def _delete_old_profiles(new_tou_tag: str, new_li_tag: str) -> None:
+    if not THUNDERSTORE_BASE.exists():
+        return
+    new_tou_ver = _parse_version(new_tou_tag)
+    new_li_ver = _parse_version(new_li_tag)
+    for entry in THUNDERSTORE_BASE.iterdir():
+        if not entry.is_dir():
+            continue
+        match = PROFILE_NAME_RE.match(entry.name)
+        if not match:
+            continue
+        existing_tou_ver = _parse_version(match.group(1))
+        existing_li_ver = _parse_version(match.group(2))
+        if (existing_tou_ver, existing_li_ver) < (new_tou_ver, new_li_ver):
+            shutil.rmtree(entry)
+            print(f"  Deleted old profile: {entry.name}")
 
 # Send a GET request to the GitHub API and return parsed JSON.
 #
