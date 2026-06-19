@@ -53,7 +53,9 @@ def main():
     print(f"\n  TOU-Mira     : {tou_label}  (tag: {tou_tag}, repo: {tou_repo})")
     print(f"  LevelImposter: {li_label}  (tag: {li_tag})")
 
-    profile_name = f"ModdedMongy_TOU-{tou_tag}_LI-{li_tag}"
+    tou_ver_clean = "v" + ".".join(str(x) for x in _parse_version(tou_tag))
+    li_ver_clean = "v" + ".".join(str(x) for x in _parse_version(li_tag))
+    profile_name = f"ModdedMongy_TOU-{tou_ver_clean}_LI-{li_ver_clean}"
 
     print(f"\n  Profile will be created at:")
     print(f"    {THUNDERSTORE_BASE / profile_name}")
@@ -276,7 +278,7 @@ def _build_mods_yml(tou_version: str, li_version: str) -> str:
         f"    patch: 752\n"
         f"  enabled: true\n"
         f"- manifestVersion: 1\n"
-        f"  name: TOU-Mira\n"
+        f"  name: AU_Avengers-TOU_Mira\n"
         f"  authorName: AU-Avengers\n"
         f"  websiteUrl: https://github.com/AU-Avengers/TOU-Mira\n"
         f"  displayName: Town of Us Mira\n"
@@ -288,7 +290,7 @@ def _build_mods_yml(tou_version: str, li_version: str) -> str:
         f"  installedAtTime: {now_ms}\n"
         f"  loaders: []\n"
         f"  dependencies:\n"
-        f"    - BepInEx-BepInExPack_AmongUs\n"
+        f"    - BepInEx-BepInExPack_AmongUs-6.0.752\n"
         f"  incompatibilities: []\n"
         f"  optionalDependencies: []\n"
         f"  versionNumber:\n"
@@ -297,7 +299,7 @@ def _build_mods_yml(tou_version: str, li_version: str) -> str:
         f"    patch: {tou_pat}\n"
         f"  enabled: true\n"
         f"- manifestVersion: 1\n"
-        f"  name: LevelImposter\n"
+        f"  name: DigiWorm0-LevelImposter\n"
         f"  authorName: DigiWorm0\n"
         f"  websiteUrl: https://github.com/DigiWorm0/LevelImposter\n"
         f"  displayName: LevelImposter\n"
@@ -309,7 +311,7 @@ def _build_mods_yml(tou_version: str, li_version: str) -> str:
         f"  installedAtTime: {now_ms}\n"
         f"  loaders: []\n"
         f"  dependencies:\n"
-        f"    - BepInEx-BepInExPack_AmongUs\n"
+        f"    - BepInEx-BepInExPack_AmongUs-6.0.752\n"
         f"  incompatibilities: []\n"
         f"  optionalDependencies: []\n"
         f"  versionNumber:\n"
@@ -342,6 +344,9 @@ def _create_profile(profile_name: str, tou_zip: bytes, li_zip: bytes,
 
     for sub in PROFILE_SUBDIRS:
         (profile_dir / sub).mkdir(parents=True, exist_ok=True)
+
+    (profile_dir / "_state" / "installation_state.yml").write_text("currentState: []\n", encoding="utf-8")
+    print("  Wrote _state/installation_state.yml")
 
     mods_yml = _build_mods_yml(tou_version, li_version)
     (profile_dir / "mods.yml").write_text(mods_yml, encoding="utf-8")
